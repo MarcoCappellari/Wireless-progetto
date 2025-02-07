@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.plcoding.bluetoothchat.presentation.components.ChatScreen
+import com.plcoding.bluetoothchat.presentation.components.TrisGameScreen
 import com.plcoding.bluetoothchat.presentation.components.DeviceScreen
 import com.plcoding.bluetoothchat.ui.theme.BluetoothChatTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
     private val bluetoothAdapter by lazy {
         bluetoothManager?.adapter
     }
+
 
     private val isBluetoothEnabled: Boolean
         get() = bluetoothAdapter?.isEnabled == true
@@ -64,6 +65,8 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+
+
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissionLauncher.launch(
@@ -113,13 +116,19 @@ class MainActivity : ComponentActivity() {
                                 Text(text = "Connecting...")
                             }
                         }
+
                         state.isConnected -> {
-                            ChatScreen(
+                            TrisGameScreen(
                                 state = state,
+                                isServer = determineIfServer(viewModel),
                                 onDisconnect = viewModel::disconnectFromDevice,
-                                onSendMessage = viewModel::sendMessage
+                                onSendMove = { row, col ->
+                                    viewModel.sendMessage("$row,$col")
+                                }
                             )
                         }
+
+
                         else -> {
                             DeviceScreen(
                                 state = state,
@@ -134,4 +143,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private fun determineIfServer(viewModel: BluetoothViewModel): Boolean {
+        return viewModel.state.value.pairedDevices.firstOrNull()?.address?.let { pairedDeviceAddress ->
+            pairedDeviceAddress < (BluetoothAdapter.getDefaultAdapter()?.address ?: "")
+        } ?: true
+    }
+
 }
