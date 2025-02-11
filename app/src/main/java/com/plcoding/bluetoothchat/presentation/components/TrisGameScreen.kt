@@ -28,7 +28,10 @@ fun TrisGameScreen(
     var remoteRandomNumber by remember { mutableStateOf<Int?>(null) }
     var playerSymbol by remember { mutableStateOf("") }
     var opponentSymbol by remember { mutableStateOf("") }
-    var currentPlayer by remember { mutableStateOf("X") }
+
+    // Variabile per gestire il turno iniziale: il giocatore "X" inizia per default
+    var startingPlayer by remember { mutableStateOf("X") }
+    var currentPlayer by remember { mutableStateOf(startingPlayer) }
 
     // --- Stato partita ---
     var board by remember { mutableStateOf(List(3) { MutableList(3) { "" } }) }
@@ -36,11 +39,14 @@ fun TrisGameScreen(
     var replayRequestSent by remember { mutableStateOf(false) }
     var replayRequestReceived by remember { mutableStateOf(false) }
 
-    // Funzione per resettare la partita mantenendo i ruoli
+    // Funzione per resettare la partita mantenendo i ruoli,
+    // ma alternando il turno iniziale ad ogni nuova partita.
     fun resetGame() {
         board = List(3) { MutableList(3) { "" } }
         winner = null
-        currentPlayer = "X"
+        // Invertiamo il turno iniziale: se era "X" diventa "O" e viceversa.
+        startingPlayer = if (startingPlayer == "X") "O" else "X"
+        currentPlayer = startingPlayer
         replayRequestSent = false
         replayRequestReceived = false
     }
@@ -62,6 +68,9 @@ fun TrisGameScreen(
                         playerSymbol = if (localRandomNumber >= num) "X" else "O"
                         opponentSymbol = if (playerSymbol == "X") "O" else "X"
                         handshakeCompleted = true
+                        // Il turno iniziale viene determinato a partire dalla variabile startingPlayer.
+                        // Quindi, se il giocatore locale è "O", l'avversario inizierà.
+                        currentPlayer = startingPlayer
                     }
                 }
             } else {
@@ -108,7 +117,7 @@ fun TrisGameScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // **Griglia con bordi visibili**
+            // Griglia del gioco
             TrisGrid(board = board, onCellClick = { row, col ->
                 if (currentPlayer == playerSymbol && board[row][col].isEmpty() && winner == null) {
                     board[row][col] = playerSymbol
@@ -155,7 +164,6 @@ fun TrisGameScreen(
     }
 }
 
-// **💾 Componente per la griglia con i bordi**
 @Composable
 fun TrisGrid(
     board: List<List<String>>,
@@ -164,7 +172,7 @@ fun TrisGrid(
     Column(
         modifier = Modifier
             .size(300.dp)
-            .background(Color.Black) // Sfondo per simulare i bordi
+            .background(Color.Black) // Sfondo per simulare i bordi della griglia
     ) {
         board.forEachIndexed { rowIndex, row ->
             Row(modifier = Modifier.weight(1f)) {
@@ -186,7 +194,6 @@ fun TrisGrid(
     }
 }
 
-// **Funzione per verificare il vincitore**
 fun checkWinner(board: List<List<String>>): String? {
     for (i in 0..2) {
         if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0].isNotEmpty()) return board[i][0]
