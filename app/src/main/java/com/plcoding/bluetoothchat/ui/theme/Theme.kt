@@ -13,7 +13,7 @@ private val DarkColorPalette = darkColors(
 )
 
 private val LightColorPalette = lightColors(
-    primary = Purple500,
+    primary = Purple200,
     primaryVariant = Purple700,
     secondary = Teal200
 
@@ -35,7 +35,7 @@ fun BluetoothChatTheme(
     val colors = if (darkTheme) {
         DarkColorPalette
     } else {
-        LightColorPalette
+        DarkColorPalette
     }
 
     MaterialTheme(
