@@ -11,20 +11,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.plcoding.bluetoothchat.presentation.components.TrisGameScreen
 import com.plcoding.bluetoothchat.presentation.components.DeviceScreen
@@ -41,7 +38,6 @@ class MainActivity : ComponentActivity() {
         bluetoothManager?.adapter
     }
 
-
     private val isBluetoothEnabled: Boolean
         get() = bluetoothAdapter?.isEnabled == true
 
@@ -50,25 +46,23 @@ class MainActivity : ComponentActivity() {
 
         val enableBluetoothLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
-        ) { /* Not needed */ }
+        ) { /* Non serve gestire il risultato */ }
 
         val permissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { perms ->
-            val canEnableBluetooth = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val canEnableBluetooth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 perms[Manifest.permission.BLUETOOTH_CONNECT] == true
             } else true
 
-            if(canEnableBluetooth && !isBluetoothEnabled) {
+            if (canEnableBluetooth && !isBluetoothEnabled) {
                 enableBluetoothLauncher.launch(
                     Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 )
             }
         }
 
-
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             permissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.BLUETOOTH_SCAN,
@@ -84,27 +78,17 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(key1 = state.errorMessage) {
                     state.errorMessage?.let { message ->
-                        Toast.makeText(
-                            applicationContext,
-                            message,
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
                     }
                 }
 
                 LaunchedEffect(key1 = state.isConnected) {
-                    if(state.isConnected) {
-                        Toast.makeText(
-                            applicationContext,
-                            "You're connected!",
-                            Toast.LENGTH_LONG
-                        ).show()
+                    if (state.isConnected) {
+                        Toast.makeText(applicationContext, "You're connected!", Toast.LENGTH_LONG).show()
                     }
                 }
 
-                Surface(
-                    color = MaterialTheme.colors.background
-                ) {
+                Surface(color = MaterialTheme.colors.background) {
                     when {
                         state.isConnecting -> {
                             Column(
@@ -116,19 +100,18 @@ class MainActivity : ComponentActivity() {
                                 Text(text = "Connecting...")
                             }
                         }
-
                         state.isConnected -> {
+                            // Passiamo onSendHandshake per eseguire l'handshake
                             TrisGameScreen(
                                 state = state,
-                                isServer = determineIfServer(viewModel),
-                                onDisconnect = viewModel::disconnectFromDevice,
+                                onSendHandshake = { handshakeValue ->
+                                    viewModel.sendMessage("HANDSHAKE:$handshakeValue")
+                                },
                                 onSendMove = { row, col ->
                                     viewModel.sendMessage("$row,$col")
                                 }
                             )
                         }
-
-
                         else -> {
                             DeviceScreen(
                                 state = state,
@@ -143,10 +126,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    private fun determineIfServer(viewModel: BluetoothViewModel): Boolean {
-        return viewModel.state.value.pairedDevices.firstOrNull()?.address?.let { pairedDeviceAddress ->
-            pairedDeviceAddress < (BluetoothAdapter.getDefaultAdapter()?.address ?: "")
-        } ?: true
-    }
-
 }
