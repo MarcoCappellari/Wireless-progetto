@@ -39,6 +39,12 @@ fun TrisGameScreen(
     var replayRequestSent by remember { mutableStateOf(false) }
     var replayRequestReceived by remember { mutableStateOf(false) }
 
+    // --- Stato contatore punti ---
+    var playerScore by remember { mutableStateOf(0) }
+    var opponentScore by remember { mutableStateOf(0) }
+    // Flag per assicurarsi che i punti vengano aggiornati una sola volta per partita
+    var scoreUpdated by remember { mutableStateOf(false) }
+
     // Funzione per resettare la partita mantenendo i ruoli,
     // ma alternando il turno iniziale ad ogni nuova partita.
     fun resetGame() {
@@ -49,11 +55,26 @@ fun TrisGameScreen(
         currentPlayer = startingPlayer
         replayRequestSent = false
         replayRequestReceived = false
+        scoreUpdated = false // Resettiamo il flag per la nuova partita
     }
 
     // Invia l'handshake solo una volta
     LaunchedEffect(Unit) {
         onSendHandshake(localRandomNumber)
+    }
+
+    // Aggiorna il contatore dei punti quando viene determinato un vincitore
+    LaunchedEffect(winner) {
+        if (winner != null && !scoreUpdated) {
+            if (winner != "Tie") {
+                if (winner == playerSymbol) {
+                    playerScore++
+                } else {
+                    opponentScore++
+                }
+            }
+            scoreUpdated = true
+        }
     }
 
     // Gestione dei messaggi in arrivo
@@ -68,7 +89,7 @@ fun TrisGameScreen(
                         playerSymbol = if (localRandomNumber >= num) "X" else "O"
                         opponentSymbol = if (playerSymbol == "X") "O" else "X"
                         handshakeCompleted = true
-                        // Il turno iniziale viene determinato a partire dalla variabile startingPlayer.
+                        // Il turno iniziale viene determinato dalla variabile startingPlayer.
                         // Quindi, se il giocatore locale è "O", l'avversario inizierà.
                         currentPlayer = startingPlayer
                     }
@@ -104,6 +125,15 @@ fun TrisGameScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(text = "TRIS", fontSize = 32.sp, color = Color.White)
+            Spacer(modifier = Modifier.height(8.dp))
+            // Visualizzazione del contatore dei punti
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text("Tu: $playerScore", fontSize = 20.sp, color = Color.White)
+                Text("Avversario: $opponentScore", fontSize = 20.sp, color = Color.White)
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = when {
