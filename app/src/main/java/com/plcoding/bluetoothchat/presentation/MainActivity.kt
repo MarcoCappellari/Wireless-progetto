@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         state.isConnected -> {
-                            // Passiamo onSendHandshake per eseguire l'handshake
+                            // Passiamo anche onSendReplay per i messaggi relativi al replay
                             TrisGameScreen(
                                 state = state,
                                 onSendHandshake = { handshakeValue ->
@@ -109,6 +109,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSendMove = { row, col ->
                                     viewModel.sendMessage("$row,$col")
+                                },
+                                onSendReplay = { msg ->
+                                    viewModel.sendMessage(msg)
                                 }
                             )
                         }
